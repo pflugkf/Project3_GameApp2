@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class GameRoomFragment extends Fragment {
+    private static final String TAG = "game room fragment";
     FragmentGameRoomBinding binding;
     GameRoomFragmentListener mListener;
     private FirebaseAuth mAuth = FirebaseAuth.getInstance();
@@ -127,7 +128,7 @@ public class GameRoomFragment extends Fragment {
         turnDocRef.set(data).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
-                Log.d("qq", "Initial turn set");
+                Log.d(TAG, "Initial turn set");
             }
         });
 
@@ -159,7 +160,7 @@ public class GameRoomFragment extends Fragment {
         cardDocRef.set(gameInstance.topCard).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
-                Log.d("qq", "Initial top card set");
+                Log.d(TAG, "Initial top card set");
                 currentCard = gameInstance.topCard;
             }
         });
@@ -197,9 +198,9 @@ public class GameRoomFragment extends Fragment {
         gameStatusListener = gameStatusDocRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
             @Override
             public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {
-                Log.d("qq", "gameFinished value: " + value.getBoolean("gameFinished"));
+                Log.d(TAG, "gameFinished value: " + value.getBoolean("gameFinished"));
                 if(value.getBoolean("gameFinished")) {
-                    Log.d("qq", "game finished, deleting game here");
+                    Log.d(TAG, "game finished, deleting game here");
                     gameStatusListener.remove();
 
                     mListener.goBackToLobby(gameInstance.gameID, gameInstance.player1, gameInstance.player2);
@@ -226,15 +227,15 @@ public class GameRoomFragment extends Fragment {
                             @Override
                             public void onComplete(@NonNull Task<Void> task) {
                                 if (task.isSuccessful()) {
-                                    Toast.makeText(getActivity(), "drew card" + newCard.value + " " + newCard.color, Toast.LENGTH_SHORT).show();
-                                    Log.d("qq", "drew card" + newCard.value + " " + newCard.color);
+                                    Toast.makeText(getActivity(), "Drew card" + newCard.value + " " + newCard.color, Toast.LENGTH_SHORT).show();
+                                    Log.d(TAG, "Drew card" + newCard.value + " " + newCard.color);
                                     switchTurn();
                                 }
                             }
                         });
                     }
                 } else {
-                    Toast.makeText(getActivity(), "Waiting for other player to finish turn", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(), R.string.waiting_turn_text, Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -254,7 +255,7 @@ public class GameRoomFragment extends Fragment {
                                     cardDocRef.update("color", "Red").addOnCompleteListener(new OnCompleteListener<Void>() {
                                         @Override
                                         public void onComplete(@NonNull Task<Void> task) {
-                                            Log.d("qq", "chose red");
+                                            Log.d(TAG, "chose red");
                                         }
                                     });
                                     break;
@@ -262,7 +263,7 @@ public class GameRoomFragment extends Fragment {
                                     cardDocRef.update("color", "Green").addOnCompleteListener(new OnCompleteListener<Void>() {
                                         @Override
                                         public void onComplete(@NonNull Task<Void> task) {
-                                            Log.d("qq", "chose green");
+                                            Log.d(TAG, "chose green");
                                         }
                                     });
                                     break;
@@ -270,7 +271,7 @@ public class GameRoomFragment extends Fragment {
                                     cardDocRef.update("color", "Yellow").addOnCompleteListener(new OnCompleteListener<Void>() {
                                         @Override
                                         public void onComplete(@NonNull Task<Void> task) {
-                                            Log.d("qq", "chose yellow");
+                                            Log.d(TAG, "chose yellow");
                                         }
                                     });
                                     break;
@@ -278,7 +279,7 @@ public class GameRoomFragment extends Fragment {
                                     cardDocRef.update("color", "Blue").addOnCompleteListener(new OnCompleteListener<Void>() {
                                         @Override
                                         public void onComplete(@NonNull Task<Void> task) {
-                                            Log.d("qq", "chose blue");
+                                            Log.d(TAG, "chose blue");
                                         }
                                     });
                                     break;
@@ -314,7 +315,7 @@ public class GameRoomFragment extends Fragment {
                             @Override
                             public void onComplete(@NonNull Task<Void> task) {
                                 if(task.isSuccessful()){
-                                    //Log.d("qq", "card added to " + player + "'s hand");
+                                    //Log.d(TAG, "card added to " + player + "'s hand");
                                 } else {
                                     AlertDialog.Builder b = new AlertDialog.Builder(getActivity());
                                     b.setTitle("Error dealing cards")
@@ -349,7 +350,7 @@ public class GameRoomFragment extends Fragment {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 if (task.isSuccessful()) {
-                    Log.d("qq", "new turn successfully updated in switchTurn");
+                    Log.d(TAG, "new turn successfully updated in switchTurn");
                 }
             }
         });
@@ -367,7 +368,7 @@ public class GameRoomFragment extends Fragment {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
                     if(task.isSuccessful()){
-                        //Log.d("qq", "added card: " + newCard.value + " " + newCard.color + " to " + player + "'s hand");
+                        //Log.d(TAG, "added card: " + newCard.value + " " + newCard.color + " to " + player + "'s hand");
                     } else {
                         AlertDialog.Builder b = new AlertDialog.Builder(getActivity());
                         b.setTitle("Error dealing cards")
@@ -393,7 +394,7 @@ public class GameRoomFragment extends Fragment {
                     @Override
                     public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
                         playerHand.clear();
-                        Log.d("qq", "snapshot listener for called for " + path);
+                        Log.d(TAG, "snapshot listener for called for " + path);
 
                         for(QueryDocumentSnapshot doc : value) {
                             Card c = doc.toObject(Card.class);
@@ -402,9 +403,9 @@ public class GameRoomFragment extends Fragment {
                         adapter.notifyDataSetChanged();
 
                         if(playerHand.size() == 0) {
-                            Log.d("qq", "turn value is: " + turn);
+                            Log.d(TAG, "turn value is: " + turn);
                             winnerID = turn;
-                            Log.d("qq", "winnerID value is: " + winnerID);
+                            Log.d(TAG, "winnerID value is: " + winnerID);
                             db.collection("users").document(winnerID)
                                     .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                                         @Override
@@ -420,7 +421,7 @@ public class GameRoomFragment extends Fragment {
                                                 gameStatusDocRef.set(status).addOnCompleteListener(new OnCompleteListener<Void>() {
                                                     @Override
                                                     public void onComplete(@NonNull Task<Void> task) {
-                                                        Log.d("qq", "removing listeners");
+                                                        Log.d(TAG, "removing listeners");
                                                         handListener.remove();
                                                         cardListener.remove();
                                                         turnListener.remove();
@@ -497,7 +498,7 @@ public class GameRoomFragment extends Fragment {
                                             documentReference.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
                                                 @Override
                                                 public void onSuccess(Void unused) {
-                                                    Log.d("qq", "card " + cardID + " deleted");
+                                                    Log.d(TAG, "card " + cardID + " deleted");
                                                 }
                                             }).addOnFailureListener(new OnFailureListener() {
                                                 @Override
@@ -506,14 +507,14 @@ public class GameRoomFragment extends Fragment {
                                                 }
                                             });
                                         } else {
-                                            Toast.makeText(getActivity(), "Card does not match top card, please choose another", Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(getActivity(), R.string.invalid_card_text, Toast.LENGTH_SHORT).show();
                                         }
 
                                     }
                                 }
                             });
                         } else {
-                            Toast.makeText(getActivity(), "Waiting for other player to finish turn", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getActivity(), R.string.waiting_turn_text, Toast.LENGTH_SHORT).show();
                         }
 
 

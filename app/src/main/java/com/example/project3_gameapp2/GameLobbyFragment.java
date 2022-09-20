@@ -46,6 +46,7 @@ import java.util.List;
  * create an instance of this fragment.
  */
 public class GameLobbyFragment extends Fragment {
+    private static final String TAG = "game lobby fragment";
     private FirebaseAuth mAuth;
     FirebaseFirestore db;
 
@@ -156,14 +157,14 @@ public class GameLobbyFragment extends Fragment {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         if(task.isSuccessful()) {
-                            Log.d("qq", "game created");
+                            Log.d(TAG, "game created");
                             AlertDialog.Builder b = new AlertDialog.Builder(getActivity());
-                            b.setTitle("Creating game").setMessage("Waiting for players...").setCancelable(false);
-                            b.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            b.setTitle(R.string.make_game_alert_txt).setMessage(R.string.awaiting_player2_text).setCancelable(false);
+                            b.setNegativeButton(R.string.cancel_button_text, new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialogInterface, int i) {
 
-                                    Toast.makeText(getActivity(), "Game canceled by player", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(getActivity(), R.string.player_cancel_text, Toast.LENGTH_SHORT).show();
                                 }
                             });
                             AlertDialog waitBox = b.create();
@@ -173,7 +174,7 @@ public class GameLobbyFragment extends Fragment {
 
                                 @Override
                                 public void onTick(long l) {
-                                    Log.d("qq", "onTick: " + l/1000);
+                                    Log.d(TAG, "onTick: " + l/1000);
                                     b.setMessage("Waiting for players..." + l/1000);
                                 }
 
@@ -185,7 +186,7 @@ public class GameLobbyFragment extends Fragment {
                                                 @Override
                                                 public void onComplete(@NonNull Task<Void> task) {
                                                     waitBox.dismiss();
-                                                    Toast.makeText(getActivity(), "No players joined, game canceled", Toast.LENGTH_SHORT).show();
+                                                    Toast.makeText(getActivity(), R.string.no_player2_joined_text, Toast.LENGTH_SHORT).show();
                                                 }
                                             });
                                 }
@@ -198,7 +199,7 @@ public class GameLobbyFragment extends Fragment {
                                 public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {
                                     if(value != null) {
                                         String test = value.getString("player2");
-                                        Log.d("qq", "player2: " + test);
+                                        Log.d(TAG, "player2: " + test);
                                         if(value.getString("player2") != null && !test.equals("")) {
                                             game.remove();
                                             cdt.cancel();
