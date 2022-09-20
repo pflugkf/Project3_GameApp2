@@ -101,12 +101,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         return true;
     }
 
-   /* @Override
-    public void goToLogin() {
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.rootView, new LoginFragment(), "login-fragment")
-                .commit();
-    }*/
+
 
     @Override
     public void goToRegistration() {

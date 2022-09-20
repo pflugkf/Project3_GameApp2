@@ -77,7 +77,7 @@ public class User implements Serializable {
         this.gender = gender;
     }
 
-    /*@Override
+    @Override
     public String toString() {
         return "User{" +
                 "id='" + id + '\'' +
@@ -87,6 +87,6 @@ public class User implements Serializable {
                 ", city='" + city + '\'' +
                 ", gender='" + gender + '\'' +
                 '}';
-    }*/
+    }
 }
 
