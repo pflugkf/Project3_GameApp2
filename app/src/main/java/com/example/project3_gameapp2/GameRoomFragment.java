@@ -429,6 +429,8 @@ public class GameRoomFragment extends Fragment {
                                             }
                                         }
                                     });
+                        } else if(playerHand.size() == 1) {
+                            //TODO: use push notification to declare uno
                         }
                     }
                 });
