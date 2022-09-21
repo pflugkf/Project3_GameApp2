@@ -99,7 +99,7 @@ public class RegistrationFragment extends Fragment {
                                                     }
                                                 });
 
-                                        //mListener.goToChatrooms();
+                                        mListener.goToGameLobby();
                                     } else {
                                         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                                         builder.setTitle("Registration  Error")
@@ -172,5 +172,6 @@ public class RegistrationFragment extends Fragment {
 
     interface RegistrationFragmentListener {
         void backToLogin();
+        void goToGameLobby();
     }
 }

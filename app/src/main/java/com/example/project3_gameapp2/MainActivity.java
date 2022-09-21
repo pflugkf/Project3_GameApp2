@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private static final String TAG = "main activity";
     private FirebaseAuth mAuth;
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private FirebaseFirestore db;
     private DrawerLayout drawerLayout;
     private Toolbar toolbar;
     private NavigationView navigationView;
@@ -55,15 +55,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         mAuth = FirebaseAuth.getInstance();
         FirebaseUser user = mAuth.getCurrentUser();
+        db = FirebaseFirestore.getInstance();
 
         if (user == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.rootView, new LoginFragment(), "login-fragment")
-                    .commit();
+            goToLogin();
         } else {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.rootView, new GameLobbyFragment(), "game-lobby-fragment")
-                    .commit();
+            goToGameLobby();
         }
     }
 
@@ -85,15 +82,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         .commit();
                 break;*/
             case R.id.nav_games:
-                getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.rootView, new GameLobbyFragment(), "game-lobby-fragment")
-                        .commit();
+                goToGameLobby();
                 break;
             case R.id.nav_logout:
                 FirebaseAuth.getInstance().signOut();
-                getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.rootView, new LoginFragment(), "login-fragment")
-                        .commit();
+                goToLogin();
                 break;
 
         }
@@ -101,13 +94,24 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         return true;
     }
 
-
+    public void goToLogin() {
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.rootView, new LoginFragment(), "login-fragment")
+                .commit();
+    }
 
     @Override
     public void goToRegistration() {
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.rootView, new RegistrationFragment(), "registration-fragment")
                 .addToBackStack(null)
+                .commit();
+    }
+
+    @Override
+    public void goToGameLobby() {
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.rootView, new GameLobbyFragment(), "game-lobby-fragment")
                 .commit();
     }
 

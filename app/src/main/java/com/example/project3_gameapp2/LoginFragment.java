@@ -69,7 +69,7 @@ public class LoginFragment extends Fragment {
                                         Log.d(TAG, "onComplete: Logged In Successfully");
                                         FirebaseUser user = mAuth.getCurrentUser();
                                         Log.d(TAG, "onComplete: User " + user);
-                                        //mListener.goToChatrooms();
+                                        mListener.goToGameLobby();
                                     } else {
                                         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                                         builder.setTitle("Login Error")
@@ -105,5 +105,6 @@ public class LoginFragment extends Fragment {
 
     public interface LoginFragmentListener {
         void goToRegistration();
+        void goToGameLobby();
     }
 }

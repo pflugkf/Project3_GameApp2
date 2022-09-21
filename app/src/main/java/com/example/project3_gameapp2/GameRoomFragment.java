@@ -402,6 +402,11 @@ public class GameRoomFragment extends Fragment {
                         }
                         adapter.notifyDataSetChanged();
 
+                        if(playerHand.size() == 1) {
+                            //TODO: use push notification to declare uno
+                            Log.d(TAG, "player " + path + " has uno, push notification sent");
+                        }
+
                         if(playerHand.size() == 0) {
                             Log.d(TAG, "turn value is: " + turn);
                             winnerID = turn;
@@ -430,8 +435,6 @@ public class GameRoomFragment extends Fragment {
                                             }
                                         }
                                     });
-                        } else if(playerHand.size() == 1) {
-                            //TODO: use push notification to declare uno
                         }
                     }
                 });
