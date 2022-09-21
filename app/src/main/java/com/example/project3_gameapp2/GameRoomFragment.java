@@ -1,13 +1,18 @@
 package com.example.project3_gameapp2;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -51,10 +56,10 @@ public class GameRoomFragment extends Fragment {
     private FirebaseAuth mAuth = FirebaseAuth.getInstance();
     FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-    private static final String ARG_GAME = "ARG_GAME";
+    private static final String ARG_GAME_ID = "ARG_GAME";
     private static final int FULL_HAND = 7;
 
-    private Game gameInstance;
+    private String gameInstanceID;
 
     private void setupUI() {
         getActivity().setTitle("Game Room");
@@ -63,10 +68,10 @@ public class GameRoomFragment extends Fragment {
         // Required empty public constructor
     }
 
-    public static GameRoomFragment newInstance(Game game) {
+    public static GameRoomFragment newInstance(String gameID) {
         GameRoomFragment fragment = new GameRoomFragment();
         Bundle args = new Bundle();
-        args.putSerializable(ARG_GAME, game);
+        args.putString(ARG_GAME_ID, gameID);
         fragment.setArguments(args);
         return fragment;
     }
@@ -75,7 +80,7 @@ public class GameRoomFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            gameInstance = (Game) getArguments().getSerializable(ARG_GAME);
+            gameInstanceID = getArguments().getString(ARG_GAME_ID);
         }
     }
 
@@ -84,25 +89,142 @@ public class GameRoomFragment extends Fragment {
                              Bundle savedInstanceState) {
         binding = FragmentGameRoomBinding.inflate(inflater, container, false);
         getActivity().findViewById(R.id.toolbar).setVisibility(View.VISIBLE);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(gameInstanceID, "unogamechannel", NotificationManager.IMPORTANCE_DEFAULT);
+            NotificationManager notificationManager = (NotificationManager) getContext().getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
         return binding.getRoot();
     }
 
     View gameItemView;
-    String winnerID, winnerName;
+    Game gameInstance;
+    String winnerID, winnerName, turn;
     ArrayList<Card> playerHand;
     RecyclerView cardHandRecyclerView;
     LinearLayoutManager linearLayoutManager;
     GameRoomRecyclerViewAdapter adapter;
     Card currentCard;
-    String turn;
     DocumentReference turnDocRef, cardDocRef, gameStatusDocRef;
     ListenerRegistration turnListener, cardListener, gameStatusListener, handListener;
+    boolean gameStart = true;
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         setupUI();
-        binding.textViewGameTitle.setText(gameInstance.getGameTitle());
+        db.collection("games").document(gameInstanceID).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if (task.isSuccessful()) {
+                    gameInstance = task.getResult().toObject(Game.class);
+                    binding.textViewGameTitle.setText(gameInstance.getGameTitle());
+
+                    //Set document references for queries
+                    gameStatusDocRef = db.collection("games").document(gameInstanceID)
+                            .collection("gameStatus").document("current");
+
+                    turnDocRef = db.collection("games").document(gameInstanceID)
+                            .collection("turn").document("current");
+
+                    cardDocRef = db.collection("games").document(gameInstanceID)
+                            .collection("topCard").document("current");
+
+                    //game turn set
+                    HashMap<String, String> data = new HashMap<>();
+                    data.put("currentTurn", gameInstance.currentTurn);
+                    turnDocRef.set(data).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            Log.d(TAG, "Initial turn set");
+                        }
+                    });
+
+                    //game turn snapshot listener
+                    turnListener = turnDocRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
+                        @Override
+                        public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {
+                            if(value != null){
+                                String currentTurnUserID = value.getString("currentTurn");
+                                turn = currentTurnUserID;
+
+                                if(currentTurnUserID != null) {
+                                    db.collection("users").document(currentTurnUserID)
+                                            .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                                                    if (task.isSuccessful()) {
+                                                        User user = task.getResult().toObject(User.class);
+                                                        binding.textViewTurn.setText(user.getFirstName() + "'s Turn");
+                                                    }
+                                                }
+                                            });
+                                }
+                            }
+                        }
+                    });
+
+                    //discard pile set
+                    if(gameInstance.topCard.value.equals("Draw 4")) {
+                        Log.d(TAG, "top card is Draw 4, changing to valid starting card");
+                        gameInstance.setTopCard(new Card("4", "Red", ""));
+                        Log.d(TAG, "Top card should be Red 4");
+                        Log.d(TAG, "Top card is now " + gameInstance.topCard.color + " " + gameInstance.topCard.value);
+                    }
+                    cardDocRef.set(gameInstance.topCard).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            Log.d(TAG, "Initial top card set to " + gameInstance.topCard.color + " " + gameInstance.topCard.value);
+                            currentCard = gameInstance.topCard;
+                        }
+                    });
+
+
+                    //discard pile top card snapshot listener
+                    cardListener = cardDocRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
+                        @Override
+                        public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {
+                            if(value != null) {
+                                Card topCard = value.toObject(Card.class);
+                                currentCard = topCard;
+                                if(topCard != null) {
+                                    binding.currentCardValue.setText(topCard.getValue());
+                                    binding.currentCardImage.setColorFilter(Color.parseColor(topCard.getColor()));
+                                }
+
+                            }
+                        }
+                    });
+
+                    //game status set
+                    HashMap<String, Object> gameStatus = new HashMap<>();
+                    gameStatus.put("gameFinished", gameInstance.gameFinished);
+                    gameStatus.put("winner", "");
+                    gameStatus.put("winnerID", "");
+                    gameStatusDocRef.set(gameStatus).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+
+                        }
+                    });
+
+                    //game status snapshot listener
+                    gameStatusListener = gameStatusDocRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
+                        @Override
+                        public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {
+                            Log.d(TAG, "gameFinished value: " + value.getBoolean("gameFinished"));
+                            if(value.getBoolean("gameFinished")) {
+                                Log.d(TAG, "game finished, deleting game here");
+                                gameStatusListener.remove();
+
+                                mListener.goBackToLobby(gameInstanceID, gameInstance.player1, gameInstance.player2);
+                            }
+                        }
+                    });
+                    gameStart = false;
+                }
+            }
+        });
         gameItemView = view.findViewById(android.R.id.content);
 
         playerHand = new ArrayList<>();
@@ -116,108 +238,6 @@ public class GameRoomFragment extends Fragment {
         cardHandRecyclerView.setAdapter(adapter);
 
 
-        //Set document references for queries
-        gameStatusDocRef = db.collection("games").document(gameInstance.gameID)
-                .collection("gameStatus").document("current");
-
-        turnDocRef = db.collection("games").document(gameInstance.gameID)
-                .collection("turn").document("current");
-
-        cardDocRef = db.collection("games").document(gameInstance.gameID)
-                .collection("topCard").document("current");
-
-        //game turn set
-        HashMap<String, String> data = new HashMap<>();
-        data.put("currentTurn", gameInstance.currentTurn);
-        turnDocRef.set(data).addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                Log.d(TAG, "Initial turn set");
-            }
-        });
-
-        //game turn snapshot listener
-        turnListener = turnDocRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
-            @Override
-            public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {
-                if(value != null){
-                    String currentTurnUserID = value.getString("currentTurn");
-                    turn = currentTurnUserID;
-
-                    if(currentTurnUserID != null) {
-                        db.collection("users").document(currentTurnUserID)
-                                .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                                        if (task.isSuccessful()) {
-                                            User user = task.getResult().toObject(User.class);
-                                            binding.textViewTurn.setText(user.getFirstName() + "'s Turn");
-                                        }
-                                    }
-                                });
-                    }
-                }
-            }
-        });
-
-        //discard pile set
-        if(gameInstance.topCard.value.equals("Draw 4")) {
-            Log.d(TAG, "top card is Draw 4, changing to valid starting card");
-            gameInstance.setTopCard(new Card("4", "Red", ""));
-            Log.d(TAG, "Top card should be Red 4");
-            Log.d(TAG, "Top card is now " + gameInstance.topCard.color + " " + gameInstance.topCard.value);
-        }
-        cardDocRef.set(gameInstance.topCard).addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                Log.d(TAG, "Initial top card set to " + gameInstance.topCard.color + " " + gameInstance.topCard.value);
-                currentCard = gameInstance.topCard;
-            }
-        });
-
-
-        //discard pile top card snapshot listener
-        cardListener = cardDocRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
-            @Override
-            public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {
-                if(value != null) {
-                    Card topCard = value.toObject(Card.class);
-                    currentCard = topCard;
-                    if(topCard != null) {
-                        binding.currentCardValue.setText(topCard.getValue());
-                        binding.currentCardImage.setColorFilter(Color.parseColor(topCard.getColor()));
-                    }
-
-                }
-            }
-        });
-
-        //game status set
-        HashMap<String, Object> gameStatus = new HashMap<>();
-        gameStatus.put("gameFinished", gameInstance.gameFinished);
-        gameStatus.put("winner", "");
-        gameStatus.put("winnerID", "");
-        gameStatusDocRef.set(gameStatus).addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-
-            }
-        });
-
-        //game status snapshot listener
-        gameStatusListener = gameStatusDocRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
-            @Override
-            public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {
-                Log.d(TAG, "gameFinished value: " + value.getBoolean("gameFinished"));
-                if(value.getBoolean("gameFinished")) {
-                    Log.d(TAG, "game finished, deleting game here");
-                    gameStatusListener.remove();
-
-                    mListener.goBackToLobby(gameInstance.gameID, gameInstance.player1, gameInstance.player2);
-                }
-            }
-        });
-
         //draw button
         binding.drawCardButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -229,7 +249,7 @@ public class GameRoomFragment extends Fragment {
                         playCard(newCard);
                     } else {
                         String collectionName = "hand-" + mAuth.getCurrentUser().getUid();
-                        DocumentReference documentReference = db.collection("games").document(gameInstance.gameID)
+                        DocumentReference documentReference = db.collection("games").document(gameInstanceID)
                                 .collection(collectionName).document();
                         newCard.setCardID(documentReference.getId());
 
@@ -305,7 +325,9 @@ public class GameRoomFragment extends Fragment {
             public void onComplete(@NonNull Task<Void> task) {
                 //Log.d("qq", "new top card successfully set in playcard");
                 String toastText = "Played" + newTopCard.getColor() + " " + newTopCard.getValue();
-                Toast.makeText(getActivity(), toastText, Toast.LENGTH_SHORT).show();
+                if(playerHand.size() != 0) {
+                    Toast.makeText(getActivity(), toastText, Toast.LENGTH_SHORT).show();
+                }
                 if(newTopCard.getValue().equals("Draw 4")) {
                     String player;
                     if(turn.equals(gameInstance.player1)) {
@@ -316,7 +338,7 @@ public class GameRoomFragment extends Fragment {
 
                     String collectionName = "hand-" + player;
                     for(int i = 0; i < 4; i++) {
-                        DocumentReference documentReference = db.collection("games").document(gameInstance.gameID)
+                        DocumentReference documentReference = db.collection("games").document(gameInstanceID)
                                 .collection(collectionName).document();
                         Card newCard = new Card();
                         newCard.setCardID(documentReference.getId());
@@ -369,7 +391,7 @@ public class GameRoomFragment extends Fragment {
     public void dealCards(String player) {
         String collectionName = "hand-" + player;
         for(int i = 0; i < FULL_HAND; i++) {
-            DocumentReference documentReference = db.collection("games").document(gameInstance.gameID)
+            DocumentReference documentReference = db.collection("games").document(gameInstanceID)
                     .collection(collectionName).document();
             Card newCard = new Card();
             newCard.setCardID(documentReference.getId());
@@ -400,13 +422,13 @@ public class GameRoomFragment extends Fragment {
     //Listen for changes to the player's hand, when the player has one card left, and when the player has won
     public void getPlayerHands() {
         String path = "hand-" + mAuth.getCurrentUser().getUid();
-        handListener = db.collection("games").document(gameInstance.getGameID())
+        handListener = db.collection("games").document(gameInstanceID)
                 .collection(path)
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
                     public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
                         playerHand.clear();
-                        Log.d(TAG, "snapshot listener for called for " + path);
+                        //Log.d(TAG, "snapshot listener for called for " + path);
 
                         for(QueryDocumentSnapshot doc : value) {
                             Card c = doc.toObject(Card.class);
@@ -417,10 +439,38 @@ public class GameRoomFragment extends Fragment {
                         if(playerHand.size() == 1) {
                             //TODO: use push notification to declare uno
                             Log.d(TAG, "player " + path + " has uno, push notification sent");
-                            if(gameItemView != null) {
-                                Snackbar.make(gameItemView, "UNO!", Snackbar.LENGTH_SHORT)
-                                        .show();
-                            }
+
+                            /*if(gameStart == false) {
+                                mListener.unoCalled();
+                                NotificationCompat.Builder builder = new NotificationCompat.Builder(getActivity(), gameInstanceID)
+                                        .setSmallIcon(R.drawable.uno_card)
+                                        .setContentTitle("UNO!")
+                                        .setContentText("Player has called UNO!")
+                                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                                        .setAutoCancel(true);
+
+                                NotificationManagerCompat managerCompat = NotificationManagerCompat.from(getContext());
+                                if (mAuth.getCurrentUser().getUid().equals(gameInstance.player1)) {
+                                    managerCompat.notify(1, builder.build());
+                                } else {
+                                    managerCompat.notify(2, builder.build());
+                                }
+                            }*/
+                            /*if(gameItemView != null) {
+                                NotificationCompat.Builder builder = new NotificationCompat.Builder(getActivity(), gameInstanceID)
+                                        .setSmallIcon(R.drawable.uno_card)
+                                        .setContentTitle("UNO!")
+                                        .setContentText("Player has called UNO!")
+                                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                                        .setAutoCancel(true);
+
+                                NotificationManagerCompat managerCompat = NotificationManagerCompat.from(getContext());
+                                if (mAuth.getCurrentUser().getUid().equals(gameInstance.player1)) {
+                                    managerCompat.notify(1, builder.build());
+                                } else {
+                                    managerCompat.notify(2, builder.build());
+                                }
+                            }*/
                         }
 
                         if(playerHand.size() == 0) {
@@ -550,6 +600,7 @@ public class GameRoomFragment extends Fragment {
     }
 
     interface GameRoomFragmentListener {
+        void unoCalled(String playerName);
         void goBackToLobby(String gameID, String p1, String p2);
     }
 }

@@ -16,6 +16,7 @@ import android.view.MenuItem;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
@@ -76,11 +77,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            /*case R.id.nav_chatrooms:
-                getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.rootView, new ChatroomsFragment(), "chatrooms-fragment")
-                        .commit();
-                break;*/
             case R.id.nav_games:
                 goToGameLobby();
                 break;
@@ -121,9 +117,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     @Override
-    public void joinGame(Game game) {
+    public void joinGame(String gameID) {
         getSupportFragmentManager().beginTransaction()
-                .replace(R.id.rootView, GameRoomFragment.newInstance(game), "new-game-fragment")
+                .replace(R.id.rootView, GameRoomFragment.newInstance(gameID), "new-game-fragment")
                 .addToBackStack(null)
                 .commit();
     }

@@ -199,13 +199,14 @@ public class GameLobbyFragment extends Fragment {
                                             game.remove();
                                             cdt.cancel();
                                             waitBox.dismiss();
+                                            //TODO: change below, repetitive/unneeded???
                                             DocumentReference dr = db.collection("games").document(docRef.getId());
                                             dr.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                                                 @Override
                                                 public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                                                     if(task.isSuccessful()) {
                                                         Game game = task.getResult().toObject(Game.class);
-                                                        mListener.joinGame(game);
+                                                        mListener.joinGame(game.getGameID());
                                                     }
 
                                                 }
@@ -274,7 +275,7 @@ public class GameLobbyFragment extends Fragment {
                     @Override
                     public void onClick(View view) {
                         if(mAuth.getCurrentUser().getUid().equals(game.getPlayer1())) {
-                            mListener.joinGame(game);
+                            mListener.joinGame(game.getGameID());
                         }else if(mAuth.getCurrentUser().getUid() != game.getPlayer1() && game.player2.isEmpty()) {
                             DocumentReference docRef = db.collection("games").document(game.gameID);
                             docRef.update("player2", mAuth.getCurrentUser().getUid())
@@ -282,7 +283,7 @@ public class GameLobbyFragment extends Fragment {
                                         @Override
                                         public void onComplete(@NonNull Task<Void> task) {
                                             if(task.isSuccessful()) {
-                                                mListener.joinGame(game);
+                                                mListener.joinGame(game.getGameID());
                                             }
                                         }
                                     });
@@ -304,6 +305,6 @@ public class GameLobbyFragment extends Fragment {
     }
 
     interface GameLobbyFragmentListener {
-        void joinGame(Game game);
+        void joinGame(String gameID);
     }
 }
