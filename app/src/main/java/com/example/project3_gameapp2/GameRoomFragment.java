@@ -228,8 +228,8 @@ public class GameRoomFragment extends Fragment {
                             boolean p2Uno = value.getBoolean("uno-"+gameInstance.player2);
                             if(p1Uno) {
                                 if(gameStart == false) {
-                                    Snackbar.make(view, "Player 1 calls UNO!", Snackbar.LENGTH_SHORT);
-                                    NotificationCompat.Builder builder = new NotificationCompat.Builder(getActivity(), gameInstanceID)
+                                    Snackbar.make(view, "Player 1 calls UNO!", Snackbar.LENGTH_SHORT).show();
+                                    /*NotificationCompat.Builder builder = new NotificationCompat.Builder(getActivity(), gameInstanceID)
                                             .setSmallIcon(R.drawable.uno_card)
                                             .setContentTitle("UNO!")
                                             .setContentText("Player 1 has called UNO!")
@@ -237,18 +237,13 @@ public class GameRoomFragment extends Fragment {
                                             .setAutoCancel(true);
 
                                     NotificationManagerCompat managerCompat = NotificationManagerCompat.from(getContext());
-                                    managerCompat.notify(1, builder.build());
-                                    /*if (mAuth.getCurrentUser().getUid().equals(gameInstance.player1)) {
-                                        managerCompat.notify(1, builder.build());
-                                    } else {
-                                        managerCompat.notify(2, builder.build());
-                                    }*/
+                                    managerCompat.notify(1, builder.build());*/
                                 }
                             }
                             if(p2Uno) {
                                 if(gameStart == false) {
-                                    Snackbar.make(view, "Player 2 calls UNO!", Snackbar.LENGTH_SHORT);
-                                    NotificationCompat.Builder builder = new NotificationCompat.Builder(getActivity(), gameInstanceID)
+                                    Snackbar.make(view, "Player 2 calls UNO!", Snackbar.LENGTH_SHORT).show();
+                                    /*NotificationCompat.Builder builder = new NotificationCompat.Builder(getActivity(), gameInstanceID)
                                             .setSmallIcon(R.drawable.uno_card)
                                             .setContentTitle("UNO!")
                                             .setContentText("Player 2 has called UNO!")
@@ -256,12 +251,7 @@ public class GameRoomFragment extends Fragment {
                                             .setAutoCancel(true);
 
                                     NotificationManagerCompat managerCompat = NotificationManagerCompat.from(getContext());
-                                    managerCompat.notify(2, builder.build());
-                                    /*if (mAuth.getCurrentUser().getUid().equals(gameInstance.player1)) {
-                                        managerCompat.notify(1, builder.build());
-                                    } else {
-                                        managerCompat.notify(2, builder.build());
-                                    }*/
+                                    managerCompat.notify(2, builder.build());*/
                                 }
                             }
                         }
@@ -518,16 +508,19 @@ public class GameRoomFragment extends Fragment {
                             //TODO: use push notification to declare uno
                             Log.d(TAG, "player " + path + " has uno, push notification sent");
                             Log.d(TAG, "player (turn) " + turn + " has uno");
-                            gameStatusDocRef.update("uno-"+turn, true).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                @Override
-                                public void onComplete(@NonNull Task<Void> task) {
-                                    if (task.isSuccessful()) {
-                                        Log.d(TAG, "setting has uno to true");
-                                    } else {
-                                        Log.d(TAG, "Error setting UNO");
+                            if(gameStatusDocRef != null){
+                                gameStatusDocRef.update("uno-"+turn, true).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Void> task) {
+                                        if (task.isSuccessful()) {
+                                            Log.d(TAG, "setting has uno to true");
+                                        } else {
+                                            Log.d(TAG, "Error setting UNO");
+                                        }
                                     }
-                                }
-                            });
+                                });
+                            }
+
                             /*if(gameStart == false) {
                                 mListener.unoCalled();
                                 NotificationCompat.Builder builder = new NotificationCompat.Builder(getActivity(), gameInstanceID)
@@ -560,16 +553,18 @@ public class GameRoomFragment extends Fragment {
                                 }
                             }*/
                         } else {
-                            gameStatusDocRef.update("uno-"+turn, false).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                @Override
-                                public void onComplete(@NonNull Task<Void> task) {
-                                    if (task.isSuccessful()) {
-                                        Log.d(TAG, "setting has uno back to false");
-                                    } else {
-                                        Log.d(TAG, "Error setting UNO to false");
+                            if(gameStatusDocRef != null) {
+                                gameStatusDocRef.update("uno-" + turn, false).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Void> task) {
+                                        if (task.isSuccessful()) {
+                                            Log.d(TAG, "setting has uno back to false");
+                                        } else {
+                                            Log.d(TAG, "Error setting UNO to false");
+                                        }
                                     }
-                                }
-                            });
+                                });
+                            }
                         }
 
                         if(playerHand.size() == 0) {

@@ -125,11 +125,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     @Override
-    public void unoCalled(String playerName) {
-
-    }
-
-    @Override
     public void goBackToLobby(String gameID, String player1ID, String player2ID) {
         Log.d("qq", "goBackToLobby");
         getSupportFragmentManager().popBackStack();
