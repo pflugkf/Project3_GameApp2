@@ -26,6 +26,8 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.snackbar.BaseTransientBottomBar;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
@@ -85,6 +87,7 @@ public class GameRoomFragment extends Fragment {
         return binding.getRoot();
     }
 
+    View gameItemView;
     String winnerID, winnerName;
     ArrayList<Card> playerHand;
     RecyclerView cardHandRecyclerView;
@@ -100,6 +103,7 @@ public class GameRoomFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         setupUI();
         binding.textViewGameTitle.setText(gameInstance.getGameTitle());
+        gameItemView = view.findViewById(android.R.id.content);
 
         playerHand = new ArrayList<>();
         getPlayerHands();
@@ -157,10 +161,16 @@ public class GameRoomFragment extends Fragment {
         });
 
         //discard pile set
+        if(gameInstance.topCard.value.equals("Draw 4")) {
+            Log.d(TAG, "top card is Draw 4, changing to valid starting card");
+            gameInstance.setTopCard(new Card("4", "Red", ""));
+            Log.d(TAG, "Top card should be Red 4");
+            Log.d(TAG, "Top card is now " + gameInstance.topCard.color + " " + gameInstance.topCard.value);
+        }
         cardDocRef.set(gameInstance.topCard).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
-                Log.d(TAG, "Initial top card set");
+                Log.d(TAG, "Initial top card set to " + gameInstance.topCard.color + " " + gameInstance.topCard.value);
                 currentCard = gameInstance.topCard;
             }
         });
@@ -294,7 +304,7 @@ public class GameRoomFragment extends Fragment {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 //Log.d("qq", "new top card successfully set in playcard");
-                String toastText = "Played" + newTopCard.getColor() + newTopCard.getValue();
+                String toastText = "Played" + newTopCard.getColor() + " " + newTopCard.getValue();
                 Toast.makeText(getActivity(), toastText, Toast.LENGTH_SHORT).show();
                 if(newTopCard.getValue().equals("Draw 4")) {
                     String player;
@@ -386,6 +396,8 @@ public class GameRoomFragment extends Fragment {
         }
     }
 
+    //Create each player hand as a collection of card documents and add snapshot listeners to both
+    //Listen for changes to the player's hand, when the player has one card left, and when the player has won
     public void getPlayerHands() {
         String path = "hand-" + mAuth.getCurrentUser().getUid();
         handListener = db.collection("games").document(gameInstance.getGameID())
@@ -405,6 +417,10 @@ public class GameRoomFragment extends Fragment {
                         if(playerHand.size() == 1) {
                             //TODO: use push notification to declare uno
                             Log.d(TAG, "player " + path + " has uno, push notification sent");
+                            if(gameItemView != null) {
+                                Snackbar.make(gameItemView, "UNO!", Snackbar.LENGTH_SHORT)
+                                        .show();
+                            }
                         }
 
                         if(playerHand.size() == 0) {
