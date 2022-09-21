@@ -274,7 +274,33 @@ public class GameRoomFragment extends Fragment {
         getActivity().findViewById(R.id.toolbar).findViewById(R.id.buttonLeaveGame).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "*****Implement leave game function*****");
+                Log.d(TAG, "turn value is: " + turn);
+                winnerID = turn;
+                Log.d(TAG, "winnerID value is: " + winnerID);
+                db.collection("users").document(winnerID)
+                        .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                            @Override
+                            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                                if (task.isSuccessful()) {
+                                    User winner = task.getResult().toObject(User.class);
+                                    winnerName = winner.getFirstName();
+
+                                    HashMap<String, Object> status = new HashMap<>();
+                                    status.put("gameFinished", true);
+                                    status.put("winner", winnerName);
+                                    status.put("winnerID", winnerID);
+                                    gameStatusDocRef.set(status).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<Void> task) {
+                                            Log.d(TAG, "removing listeners");
+                                            handListener.remove();
+                                            cardListener.remove();
+                                            turnListener.remove();
+                                        }
+                                    });
+                                }
+                            }
+                        });
             }
         });
     }
