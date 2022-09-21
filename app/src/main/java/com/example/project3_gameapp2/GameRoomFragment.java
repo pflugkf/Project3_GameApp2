@@ -92,7 +92,7 @@ public class GameRoomFragment extends Fragment {
         getActivity().findViewById(R.id.toolbar).findViewById(R.id.buttonLeaveGame).setVisibility(View.VISIBLE);
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(gameInstanceID, "unogamechannel", NotificationManager.IMPORTANCE_DEFAULT);
-            NotificationManager notificationManager = (NotificationManager) getContext().getSystemService(NotificationManager.class);
+            NotificationManager notificationManager = getContext().getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
         return binding.getRoot();
@@ -202,10 +202,14 @@ public class GameRoomFragment extends Fragment {
                     gameStatus.put("gameFinished", gameInstance.gameFinished);
                     gameStatus.put("winner", "");
                     gameStatus.put("winnerID", "");
+                    gameStatus.put("uno-"+gameInstance.player1, false);
+                    gameStatus.put("uno-"+gameInstance.player2, false);
                     gameStatusDocRef.set(gameStatus).addOnCompleteListener(new OnCompleteListener<Void>() {
                         @Override
                         public void onComplete(@NonNull Task<Void> task) {
-
+                            if(task.isSuccessful()) {
+                                Log.d(TAG, "Initial game status set");
+                            }
                         }
                     });
 
@@ -217,8 +221,48 @@ public class GameRoomFragment extends Fragment {
                             if(value.getBoolean("gameFinished")) {
                                 Log.d(TAG, "game finished, deleting game here");
                                 gameStatusListener.remove();
-
                                 mListener.goBackToLobby(gameInstanceID, gameInstance.player1, gameInstance.player2);
+                            }
+
+                            boolean p1Uno = value.getBoolean("uno-"+gameInstance.player1);
+                            boolean p2Uno = value.getBoolean("uno-"+gameInstance.player2);
+                            if(p1Uno) {
+                                if(gameStart == false) {
+                                    Snackbar.make(view, "Player 1 calls UNO!", Snackbar.LENGTH_SHORT);
+                                    NotificationCompat.Builder builder = new NotificationCompat.Builder(getActivity(), gameInstanceID)
+                                            .setSmallIcon(R.drawable.uno_card)
+                                            .setContentTitle("UNO!")
+                                            .setContentText("Player 1 has called UNO!")
+                                            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                                            .setAutoCancel(true);
+
+                                    NotificationManagerCompat managerCompat = NotificationManagerCompat.from(getContext());
+                                    managerCompat.notify(1, builder.build());
+                                    /*if (mAuth.getCurrentUser().getUid().equals(gameInstance.player1)) {
+                                        managerCompat.notify(1, builder.build());
+                                    } else {
+                                        managerCompat.notify(2, builder.build());
+                                    }*/
+                                }
+                            }
+                            if(p2Uno) {
+                                if(gameStart == false) {
+                                    Snackbar.make(view, "Player 2 calls UNO!", Snackbar.LENGTH_SHORT);
+                                    NotificationCompat.Builder builder = new NotificationCompat.Builder(getActivity(), gameInstanceID)
+                                            .setSmallIcon(R.drawable.uno_card)
+                                            .setContentTitle("UNO!")
+                                            .setContentText("Player 2 has called UNO!")
+                                            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                                            .setAutoCancel(true);
+
+                                    NotificationManagerCompat managerCompat = NotificationManagerCompat.from(getContext());
+                                    managerCompat.notify(2, builder.build());
+                                    /*if (mAuth.getCurrentUser().getUid().equals(gameInstance.player1)) {
+                                        managerCompat.notify(1, builder.build());
+                                    } else {
+                                        managerCompat.notify(2, builder.build());
+                                    }*/
+                                }
                             }
                         }
                     });
@@ -473,7 +517,17 @@ public class GameRoomFragment extends Fragment {
                         if(playerHand.size() == 1) {
                             //TODO: use push notification to declare uno
                             Log.d(TAG, "player " + path + " has uno, push notification sent");
-
+                            Log.d(TAG, "player (turn) " + turn + " has uno");
+                            gameStatusDocRef.update("uno-"+turn, true).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    if (task.isSuccessful()) {
+                                        Log.d(TAG, "setting has uno to true");
+                                    } else {
+                                        Log.d(TAG, "Error setting UNO");
+                                    }
+                                }
+                            });
                             /*if(gameStart == false) {
                                 mListener.unoCalled();
                                 NotificationCompat.Builder builder = new NotificationCompat.Builder(getActivity(), gameInstanceID)
@@ -505,6 +559,17 @@ public class GameRoomFragment extends Fragment {
                                     managerCompat.notify(2, builder.build());
                                 }
                             }*/
+                        } else {
+                            gameStatusDocRef.update("uno-"+turn, false).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    if (task.isSuccessful()) {
+                                        Log.d(TAG, "setting has uno back to false");
+                                    } else {
+                                        Log.d(TAG, "Error setting UNO to false");
+                                    }
+                                }
+                            });
                         }
 
                         if(playerHand.size() == 0) {
@@ -523,6 +588,8 @@ public class GameRoomFragment extends Fragment {
                                                 status.put("gameFinished", true);
                                                 status.put("winner", winnerName);
                                                 status.put("winnerID", winnerID);
+                                                status.put("uno-"+gameInstance.player1, false);
+                                                status.put("uno-"+gameInstance.player2, false);
                                                 gameStatusDocRef.set(status).addOnCompleteListener(new OnCompleteListener<Void>() {
                                                     @Override
                                                     public void onComplete(@NonNull Task<Void> task) {
@@ -634,7 +701,6 @@ public class GameRoomFragment extends Fragment {
     }
 
     interface GameRoomFragmentListener {
-        void unoCalled(String playerName);
         void goBackToLobby(String gameID, String p1, String p2);
     }
 }
