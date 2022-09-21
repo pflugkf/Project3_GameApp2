@@ -89,6 +89,7 @@ public class GameRoomFragment extends Fragment {
                              Bundle savedInstanceState) {
         binding = FragmentGameRoomBinding.inflate(inflater, container, false);
         getActivity().findViewById(R.id.toolbar).setVisibility(View.VISIBLE);
+        getActivity().findViewById(R.id.toolbar).findViewById(R.id.buttonLeaveGame).setVisibility(View.VISIBLE);
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(gameInstanceID, "unogamechannel", NotificationManager.IMPORTANCE_DEFAULT);
             NotificationManager notificationManager = (NotificationManager) getContext().getSystemService(NotificationManager.class);
@@ -267,6 +268,13 @@ public class GameRoomFragment extends Fragment {
                 } else {
                     Toast.makeText(getActivity(), R.string.waiting_turn_text, Toast.LENGTH_SHORT).show();
                 }
+            }
+        });
+
+        getActivity().findViewById(R.id.toolbar).findViewById(R.id.buttonLeaveGame).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(TAG, "*****Implement leave game function*****");
             }
         });
     }
