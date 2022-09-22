@@ -203,25 +203,41 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             gameRef.collection("gameStatus").document("current").delete().addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
-                    Log.d(TAG, "gameStatus deleted");
-                    gameRef.collection("topCard").document("current").delete().addOnCompleteListener(new OnCompleteListener<Void>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                            Log.d(TAG, "topCard deleted");
-                            gameRef.collection("turn").document("current").delete().addOnCompleteListener(new OnCompleteListener<Void>() {
-                                @Override
-                                public void onComplete(@NonNull Task<Void> task) {
+                    if (task.isSuccessful()) {
+                        Log.d(TAG, "gameStatus deleted");
+                        gameRef.collection("topCard").document("current").delete().addOnCompleteListener(new OnCompleteListener<Void>() {
+                            @Override
+                            public void onComplete(@NonNull Task<Void> task) {
+                                if (task.isSuccessful()) {
                                     Log.d(TAG, "topCard deleted");
-                                    gameRef.delete().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    gameRef.collection("turn").document("current").delete().addOnCompleteListener(new OnCompleteListener<Void>() {
                                         @Override
                                         public void onComplete(@NonNull Task<Void> task) {
-                                            Log.d(TAG, "Game deleted");
+                                            if (task.isSuccessful()) {
+                                                Log.d(TAG, "turn deleted");
+                                                gameRef.delete().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                    @Override
+                                                    public void onComplete(@NonNull Task<Void> task) {
+                                                        if (task.isSuccessful()) {
+                                                            Log.d(TAG, "Game deleted");
+                                                        } else {
+                                                            Log.d(TAG, "Failed to delete game");
+                                                        }
+                                                    }
+                                                });
+                                            } else {
+                                                Log.d(TAG, "turn failed to delete");
+                                            }
                                         }
                                     });
+                                } else {
+                                    Log.d(TAG, "topCard failed to delete");
                                 }
-                            });
-                        }
-                    });
+                            }
+                        });
+                    } else {
+                        Log.d(TAG, "gameStatus failed to delete");
+                    }
                 }
             });
         }
