@@ -34,6 +34,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.functions.FirebaseFunctions;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ import java.util.List;
 
 public class GameLobbyFragment extends Fragment {
     private static final String TAG = "game lobby fragment";
+    private FirebaseFunctions mFunctions;
     private FirebaseAuth mAuth;
     FirebaseFirestore db;
 
@@ -72,6 +74,7 @@ public class GameLobbyFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         getActivity().setTitle(R.string.game_lobby_fragment);
         getActivity().findViewById(R.id.toolbar).findViewById(R.id.buttonLeaveGame).setVisibility(View.INVISIBLE);
+        mFunctions = FirebaseFunctions.getInstance();
 
         db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();

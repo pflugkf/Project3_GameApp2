@@ -43,6 +43,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.functions.FirebaseFunctions;
 
 import org.w3c.dom.Document;
 
@@ -51,6 +52,7 @@ import java.util.HashMap;
 
 public class GameRoomFragment extends Fragment {
     private static final String TAG = "game room fragment";
+    private FirebaseFunctions mFunctions;
     FragmentGameRoomBinding binding;
     GameRoomFragmentListener mListener;
     private FirebaseAuth mAuth = FirebaseAuth.getInstance();
@@ -114,6 +116,8 @@ public class GameRoomFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         setupUI();
+        mFunctions = FirebaseFunctions.getInstance();
+
         db.collection("games").document(gameInstanceID).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
             public void onComplete(@NonNull Task<DocumentSnapshot> task) {

@@ -25,11 +25,13 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.functions.FirebaseFunctions;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, LoginFragment.LoginFragmentListener,
         RegistrationFragment.RegistrationFragmentListener, GameLobbyFragment.GameLobbyFragmentListener, GameRoomFragment.GameRoomFragmentListener{
 
     private static final String TAG = "main activity";
+    private FirebaseFunctions mFunctions;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private DrawerLayout drawerLayout;
@@ -41,6 +43,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mFunctions = FirebaseFunctions.getInstance();
 
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
